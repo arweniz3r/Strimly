@@ -494,3 +494,350 @@ function enableDragDrop() {
     }
   });
 }
+
+// --- Gaming News Widget ---
+const newsToggle = document.getElementById('news-toggle');
+const newsWidget = document.getElementById('news-widget');
+const newsContent = document.getElementById('news-content');
+const refreshNewsBtn = document.getElementById('refresh-news');
+
+// News sources (free RSS feeds)
+const newsSources = [
+  {
+    name: 'Polygon',
+    url: 'https://polygon.com/rss/index.xml',
+    icon: '📰'
+  },
+  {
+    name: 'Kotaku',
+    url: 'https://kotaku.com/rss',
+    icon: '🎮'
+  },
+  {
+    name: 'IGN',
+    url: 'https://feeds.feedburner.com/ign/all',
+    icon: '🔥'
+  },
+  {
+    name: 'GameSpot',
+    url: 'https://gamespot.com/feeds/game-news/',
+    icon: '🎯'
+  }
+];
+
+// Alternative: Use JSON feeds or simpler sources
+const alternativeNewsSources = [
+  {
+    name: 'Gaming News',
+    url: 'https://newsapi.org/v2/everything?q=gaming&language=en&sortBy=publishedAt&apiKey=demo',
+    icon: '🎮',
+    type: 'json'
+  }
+];
+
+let newsCache = [];
+let newsCacheTime = 0;
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+
+// Toggle news widget
+if (newsToggle) {
+  newsToggle.addEventListener('click', () => {
+    const isOpen = newsWidget.classList.contains('open');
+    
+    if (isOpen) {
+      // Closing the widget
+      newsWidget.classList.remove('open');
+      newsToggle.classList.remove('active');
+      localStorage.removeItem('strimly_news_visible');
+    } else {
+      // Opening the widget
+      newsWidget.classList.add('open');
+      newsToggle.classList.add('active');
+      
+      if (newsCache.length === 0) {
+        fetchGamingNews();
+      }
+      
+      // Only save preference when opening
+      localStorage.setItem('strimly_news_visible', 'true');
+    }
+  });
+}
+
+// Refresh news
+if (refreshNewsBtn) {
+  refreshNewsBtn.addEventListener('click', () => {
+    fetchGamingNews(true);
+  });
+}
+
+// Load news visibility preference - always start closed
+const newsVisible = localStorage.getItem('strimly_news_visible') === 'true';
+if (newsWidget) {
+  // Always start closed, regardless of previous preference
+  newsWidget.classList.remove('open');
+  newsToggle.classList.remove('active');
+  // Clear the stored preference to ensure it stays closed
+  localStorage.removeItem('strimly_news_visible');
+}
+
+async function fetchGamingNews(forceRefresh = false) {
+  const now = Date.now();
+  
+  // Use cache if available and not expired
+  if (!forceRefresh && newsCache.length > 0 && (now - newsCacheTime) < CACHE_DURATION) {
+    displayNews(newsCache);
+    return;
+  }
+  
+  // Show loading state
+  if (refreshNewsBtn) {
+    refreshNewsBtn.classList.add('loading');
+  }
+  
+  // For now, immediately show fallback content since CORS proxies are unreliable
+  // In the future, you could implement a server-side solution or use a paid API
+  setTimeout(() => {
+    displayFallbackNews();
+    if (refreshNewsBtn) {
+      refreshNewsBtn.classList.remove('loading');
+    }
+  }, 500); // Small delay to show loading state
+}
+
+function displayNews(news) {
+  if (!newsContent) return;
+  
+  if (news.length === 0) {
+    newsContent.innerHTML = '<div class="news-error">No news available at the moment.</div>';
+    return;
+  }
+  
+  const newsHTML = news.map(item => `
+    <div class="news-item" onclick="window.open('${item.link}', '_blank')">
+      <div class="news-source">${item.sourceIcon} ${item.source}</div>
+      <div class="news-title">${item.title}</div>
+      <div class="news-date">${item.pubDate}</div>
+    </div>
+  `).join('');
+  
+  newsContent.innerHTML = newsHTML;
+}
+
+function displayNewsError(message) {
+  if (!newsContent) return;
+  newsContent.innerHTML = `<div class="news-error">${message}</div>`;
+}
+
+function displayFallbackNews() {
+  if (!newsContent) return;
+  
+  const fallbackNews = [
+    {
+      title: "Latest Gaming News & Reviews",
+      link: "https://www.polygon.com/gaming",
+      pubDate: "Updated regularly",
+      source: "Polygon",
+      sourceIcon: "📰"
+    },
+    {
+      title: "Gaming Culture & Industry News",
+      link: "https://kotaku.com",
+      pubDate: "Updated regularly", 
+      source: "Kotaku",
+      sourceIcon: "🎮"
+    },
+    {
+      title: "Game Reviews & Previews",
+      link: "https://www.ign.com/games",
+      pubDate: "Updated regularly",
+      source: "IGN", 
+      sourceIcon: "🔥"
+    },
+    {
+      title: "Gaming News & Features",
+      link: "https://www.gamespot.com/news/",
+      pubDate: "Updated regularly",
+      source: "GameSpot",
+      sourceIcon: "🎯"
+    },
+    {
+      title: "PC Gaming News",
+      link: "https://www.pcgamer.com/news/",
+      pubDate: "Updated regularly",
+      source: "PC Gamer",
+      sourceIcon: "🖥️"
+    },
+    {
+      title: "Esports News & Coverage",
+      link: "https://www.eslgaming.com/news",
+      pubDate: "Updated regularly",
+      source: "ESL Gaming",
+      sourceIcon: "🏆"
+    }
+  ];
+  
+  const newsHTML = fallbackNews.map(item => `
+    <div class="news-item" onclick="window.open('${item.link}', '_blank')">
+      <div class="news-source">${item.sourceIcon} ${item.source}</div>
+      <div class="news-title">${item.title}</div>
+      <div class="news-date">${item.pubDate}</div>
+    </div>
+  `).join('');
+  
+  newsContent.innerHTML = `
+    <div style="margin-bottom: 1em; padding: 0.8em; background: rgba(46,234,106,0.1); border-radius: 0.5em; border-left: 3px solid #2eea6a; color: #2eea6a; font-size: 0.9em;">
+      🎮 Quick access to top gaming news sites
+    </div>
+    ${newsHTML}
+  `;
+}
+
+function cleanText(text) {
+  if (!text) return '';
+  return text
+    .replace(/<[^>]*>/g, '') // Remove HTML tags
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+}
+
+function formatDate(dateString) {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffMins < 60) {
+      return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    } else if (diffDays < 7) {
+      return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  } catch (error) {
+    return dateString;
+  }
+}
+
+// Auto-refresh news every 30 minutes
+setInterval(() => {
+  if (newsWidget.classList.contains('open')) {
+    fetchGamingNews();
+  }
+}, 30 * 60 * 1000);
+
+// --- Ad Blocker Detection ---
+function detectAdBlocker() {
+  // Method 1: Check if AdSense script is blocked
+  const adsenseScript = document.querySelector('script[src*="googlesyndication"]');
+  
+  if (!adsenseScript) {
+    showAdBlockerWarning();
+    return;
+  }
+  
+  // Method 2: Check if adsbygoogle function exists
+  if (typeof adsbygoogle === 'undefined') {
+    showAdBlockerWarning();
+    return;
+  }
+  
+  // Method 3: Create a test ad element and check if it gets blocked
+  const testAd = document.createElement('div');
+  testAd.className = 'adsbygoogle';
+  testAd.style.cssText = 'position:absolute;left:-10000px;width:100px;height:100px;background:red;';
+  testAd.setAttribute('data-ad-client', 'ca-pub-4364635918140374');
+  testAd.setAttribute('data-ad-slot', 'test-slot');
+  testAd.setAttribute('data-ad-format', 'auto');
+  testAd.setAttribute('data-full-width-responsive', 'true');
+  
+  document.body.appendChild(testAd);
+  
+  // Method 4: Check if common ad blocker selectors are present
+  const adBlockerSelectors = [
+    '.ad',
+    '.ads',
+    '.advertisement',
+    '[class*="ad-"]',
+    '[id*="ad-"]',
+    '[class*="ads-"]',
+    '[id*="ads-"]'
+  ];
+  
+  adBlockerSelectors.forEach(selector => {
+    const elements = document.querySelectorAll(selector);
+    // Check for ad elements but don't log
+  });
+  
+  // Check if the test ad element is hidden or removed
+  setTimeout(() => {
+    const isHidden = testAd.offsetHeight === 0 || 
+                    testAd.offsetWidth === 0 || 
+                    testAd.style.display === 'none' ||
+                    testAd.style.visibility === 'hidden' ||
+                    window.getComputedStyle(testAd).display === 'none' ||
+                    !document.body.contains(testAd);
+    
+    document.body.removeChild(testAd);
+    
+    if (isHidden) {
+      showAdBlockerWarning();
+    }
+  }, 200);
+}
+
+function showAdBlockerWarning() {
+  // Check if user has already dismissed the warning
+  const dismissed = localStorage.getItem('strimly_ad_warning_dismissed');
+  if (dismissed) {
+    return;
+  }
+  
+  const warning = document.getElementById('ad-blocker-warning');
+  if (warning) {
+    warning.style.display = 'block';
+  }
+}
+
+// Manual test function - you can call this in console to test
+function testAdBlockerDetection() {
+  localStorage.removeItem('strimly_ad_warning_dismissed'); // Reset dismissal
+  detectAdBlocker();
+}
+
+function hideAdBlockerWarning() {
+  const warning = document.getElementById('ad-blocker-warning');
+  if (warning) {
+    warning.style.display = 'none';
+    localStorage.setItem('strimly_ad_warning_dismissed', 'true');
+  }
+}
+
+// Dismiss button functionality
+const dismissAdWarning = document.getElementById('dismiss-ad-warning');
+if (dismissAdWarning) {
+  dismissAdWarning.addEventListener('click', hideAdBlockerWarning);
+}
+
+// Run ad blocker detection after page loads
+window.addEventListener('load', () => {
+  // Run detection immediately and after a delay
+  detectAdBlocker();
+  setTimeout(detectAdBlocker, 2000);
+});
+
+// Also run detection when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  detectAdBlocker();
+});
