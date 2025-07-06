@@ -737,83 +737,30 @@ setInterval(() => {
   }
 }, 30 * 60 * 1000);
 
-// --- Ad Blocker Detection ---
-function detectAdBlocker() {
-  // Method 1: Check if AdSense script is blocked
-  const adsenseScript = document.querySelector('script[src*="googlesyndication"]');
-  
-  if (!adsenseScript) {
-    showAdBlockerWarning();
-    return;
-  }
-  
-  // Method 2: Check if adsbygoogle function exists
-  if (typeof adsbygoogle === 'undefined') {
-    showAdBlockerWarning();
-    return;
-  }
-  
-  // Method 3: Create a test ad element and check if it gets blocked
-  const testAd = document.createElement('div');
-  testAd.className = 'adsbygoogle';
-  testAd.style.cssText = 'position:absolute;left:-10000px;width:100px;height:100px;background:red;';
-  testAd.setAttribute('data-ad-client', 'ca-pub-4364635918140374');
-  testAd.setAttribute('data-ad-slot', 'test-slot');
-  testAd.setAttribute('data-ad-format', 'auto');
-  testAd.setAttribute('data-full-width-responsive', 'true');
-  
-  document.body.appendChild(testAd);
-  
-  // Method 4: Check if common ad blocker selectors are present
-  const adBlockerSelectors = [
-    '.ad',
-    '.ads',
-    '.advertisement',
-    '[class*="ad-"]',
-    '[id*="ad-"]',
-    '[class*="ads-"]',
-    '[id*="ads-"]'
-  ];
-  
-  adBlockerSelectors.forEach(selector => {
-    const elements = document.querySelectorAll(selector);
-    // Check for ad elements but don't log
-  });
-  
-  // Check if the test ad element is hidden or removed
-  setTimeout(() => {
-    const isHidden = testAd.offsetHeight === 0 || 
-                    testAd.offsetWidth === 0 || 
-                    testAd.style.display === 'none' ||
-                    testAd.style.visibility === 'hidden' ||
-                    window.getComputedStyle(testAd).display === 'none' ||
-                    !document.body.contains(testAd);
-    
-    document.body.removeChild(testAd);
-    
-    if (isHidden) {
-      showAdBlockerWarning();
-    }
-  }, 200);
+// --- Ad Blocker Detection (Script-based) ---
+function checkAdScriptBlocked(url, callback) {
+    const script = document.createElement('script');
+    script.src = url;
+    script.async = true;
+
+    script.onerror = function () {
+        callback(true);  // Blocked
+    };
+
+    script.onload = function () {
+        callback(false); // Loaded
+    };
+
+    document.head.appendChild(script);
 }
 
 function showAdBlockerWarning() {
-  // Check if user has already dismissed the warning
   const dismissed = localStorage.getItem('strimly_ad_warning_dismissed');
-  if (dismissed) {
-    return;
-  }
-  
+  if (dismissed) return;
   const warning = document.getElementById('ad-blocker-warning');
   if (warning) {
     warning.style.display = 'block';
   }
-}
-
-// Manual test function - you can call this in console to test
-function testAdBlockerDetection() {
-  localStorage.removeItem('strimly_ad_warning_dismissed'); // Reset dismissal
-  detectAdBlocker();
 }
 
 function hideAdBlockerWarning() {
@@ -824,20 +771,28 @@ function hideAdBlockerWarning() {
   }
 }
 
-// Dismiss button functionality
 const dismissAdWarning = document.getElementById('dismiss-ad-warning');
 if (dismissAdWarning) {
   dismissAdWarning.addEventListener('click', hideAdBlockerWarning);
 }
 
-// Run ad blocker detection after page loads
+// Only check for ad blocker if an ad slot is present
 window.addEventListener('load', () => {
-  // Run detection immediately and after a delay
-  detectAdBlocker();
-  setTimeout(detectAdBlocker, 2000);
+  if (document.querySelector('.adsbygoogle')) {
+    checkAdScriptBlocked('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', function (isBlocked) {
+      if (isBlocked) {
+        showAdBlockerWarning();
+      }
+    });
+  }
 });
 
-// Also run detection when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-  detectAdBlocker();
+  if (document.querySelector('.adsbygoogle')) {
+    checkAdScriptBlocked('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', function (isBlocked) {
+      if (isBlocked) {
+        showAdBlockerWarning();
+      }
+    });
+  }
 });
