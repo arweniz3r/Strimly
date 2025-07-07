@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Strimly - Multistream Viewer</title>
   <link rel="stylesheet" href="style.css">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4364635918140374"
-     crossorigin="anonymous"></script>
 </head>
 <body>
   <header class="main-header" role="banner">
@@ -28,43 +26,13 @@
           <button type="submit" aria-label="Add Stream">Add</button>
         </form>
         <div class="header-actions">
-          <button class="news-toggle" id="news-toggle" title="Toggle gaming news" aria-label="Toggle news">📰</button>
           <button class="theme-toggle" id="theme-toggle" title="Toggle light/dark mode" aria-label="Toggle theme">🌙</button>
           <button id="share-btn" title="Share your streams" aria-label="Share streams" class="share-btn">🔗</button>
         </div>
       </nav>
     </div>
   </header>
-  
-  <!-- Gaming News Widget -->
-  <div id="news-widget" class="news-widget">
-    <div class="news-header">
-      <h2>🎮 Gaming News</h2>
-      <button id="refresh-news" class="refresh-btn" title="Refresh news" aria-label="Refresh news">🔄</button>
-    </div>
-    <div id="news-content" class="news-content">
-      <div class="news-loading">Loading latest gaming news...</div>
-    </div>
-  </div>
-  
   <div id="warning" style="display:none;"></div>
-  
-  <!-- Ad Blocker Detection -->
-  <div id="ad-blocker-warning" class="ad-blocker-warning" style="display: none;">
-    <div class="ad-blocker-content">
-      <div class="ad-blocker-icon">🛡️</div>
-      <div class="ad-blocker-text">
-        <strong>Ad Blocker Detected</strong><br>
-        To support Strimly and enjoy an ad-free experience, please consider:
-        <ul>
-          <li>Disabling your ad blocker for this site</li>
-          <li>Adding Strimly to your ad blocker's whitelist</li>
-          <li>Or consider a small donation to support development</li>
-        </ul>
-      </div>
-      <button id="dismiss-ad-warning" class="dismiss-btn">Got it</button>
-    </div>
-  </div>
   <main id="streams-container" class="streams-grid" aria-label="Streams">
     <div id="empty-state" class="empty-state">
       <div class="empty-message">
@@ -77,10 +45,11 @@
       </div>
     </div>
   </main>
+  <div id="ad-banner" class="ad-banner" role="complementary">
+  </div>
   <footer class="main-footer" role="contentinfo">
     <span>Strimly &copy; 2025. All rights reserved.</span>
   </footer>
   <script src="app.js"></script>
-  <ins class="adsbygoogle" style="display:none"></ins>
 </body>
 </html>
